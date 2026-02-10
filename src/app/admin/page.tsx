@@ -17,9 +17,12 @@ import { Activity, CheckCircle2, MessageSquare, Users } from "lucide-react";
 
 import { api } from "@convex/_generated/api";
 import { cn } from "@/lib/cn";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function AdminOverviewPage() {
-  const stats = useQuery(api.admin.getAdminStats, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+  const stats = useQuery(api.admin.getAdminStats, { demoClerkId: demoArg });
 
   const categoryData = useMemo(() => {
     const obj = stats?.requestsByCategory ?? {};
@@ -163,4 +166,3 @@ function Kpi({
     </div>
   );
 }
-

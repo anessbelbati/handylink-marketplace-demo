@@ -16,20 +16,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { RatingStars } from "@/components/rating-stars";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function DashboardHome() {
-  const me = useQuery(api.users.getMe, {});
-  const requests = useQuery(api.requests.getRequests, {});
-  const conversations = useQuery(api.conversations.getConversations, {});
-  const notificationsUnread = useQuery(api.notifications.getUnreadCount, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
+  const requests = useQuery(api.requests.getRequests, { demoClerkId: demoArg });
+  const conversations = useQuery(api.conversations.getConversations, { demoClerkId: demoArg });
+  const notificationsUnread = useQuery(api.notifications.getUnreadCount, { demoClerkId: demoArg });
 
   const myQuotes = useQuery(
     api.quotes.getMyQuotes,
-    me?.role === "provider" ? {} : "skip",
+    me?.role === "provider" ? { demoClerkId: demoArg } : "skip",
   );
   const myReviews = useQuery(
     api.reviews.getMyReviews,
-    me?.role === "provider" ? {} : "skip",
+    me?.role === "provider" ? { demoClerkId: demoArg } : "skip",
   );
 
   if (!me || !requests || !conversations || notificationsUnread === undefined) {

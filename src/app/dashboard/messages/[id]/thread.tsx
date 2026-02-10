@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function ConversationThread({
   conversationId,
@@ -21,8 +22,12 @@ export default function ConversationThread({
   conversationId: string;
 }) {
   const router = useRouter();
-  const me = useQuery(api.users.getMe, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
   const conversation = useQuery(api.conversations.getConversation, {
+    demoClerkId: demoArg,
     conversationId: conversationId as any,
   });
 
@@ -38,6 +43,7 @@ export default function ConversationThread({
   } = usePaginatedQuery(
     api.messages.getMessages,
     {
+      demoClerkId: demoArg,
       conversationId: conversationId as any,
     },
     { initialNumItems: 50 },
@@ -69,9 +75,10 @@ export default function ConversationThread({
     if (!conversationId) return;
     // best effort; ignore errors
     markAsRead({
+      demoClerkId: demoArg,
       conversationId: conversationId as any,
     }).catch(() => {});
-  }, [conversationId, markAsRead, messagesDesc.length]);
+  }, [conversationId, markAsRead, messagesDesc.length, demoArg]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,6 +107,7 @@ export default function ConversationThread({
         imageStorageId = await uploadImage(imageFile);
       }
       await sendMessage({
+        demoClerkId: demoArg,
         conversationId: conversationId as any,
         content: content || (imageStorageId ? "" : " "),
         imageStorageId: imageStorageId ? (imageStorageId as any) : undefined,

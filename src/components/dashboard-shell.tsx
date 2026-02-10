@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { SignedIn, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn as ClerkSignedIn,
+  UserButton as ClerkUserButton,
+} from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { useEffect } from "react";
 import {
@@ -20,6 +23,9 @@ import {
 import { api } from "@convex/_generated/api";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { isDemoAuth } from "@/lib/auth-mode";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 type NavItem = {
   href: string;
@@ -63,9 +69,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const me = useQuery(api.users.getMe, {});
-  const notificationsUnread = useQuery(api.notifications.getUnreadCount, {});
-  const conversations = useQuery(api.conversations.getConversations, {});
+  const { demoClerkId, clearDemoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
+  const notificationsUnread = useQuery(api.notifications.getUnreadCount, {
+    demoClerkId: demoArg,
+  });
+  const conversations = useQuery(api.conversations.getConversations, {
+    demoClerkId: demoArg,
+  });
 
   const messageUnread = (conversations ?? []).reduce(
     (acc, c) => acc + (c.unreadCount ?? 0),
@@ -73,7 +86,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (me === null) router.replace("/onboarding");
+    if (me === null) {
+      router.replace(isDemoAuth ? "/demo" : "/onboarding");
+    }
   }, [me, router]);
 
   if (me === undefined) {
@@ -108,9 +123,30 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 {me.role}
               </Badge>
             ) : null}
-            <SignedIn>
-              <UserButton appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
-            </SignedIn>
+            {isDemoAuth ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="muted" className="hidden sm:inline-flex">
+                  demo
+                </Badge>
+                <Button href="/demo" variant="outline" size="sm">
+                  Switch user
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    clearDemoClerkId();
+                    router.replace("/demo");
+                  }}
+                >
+                  Log out
+                </Button>
+              </div>
+            ) : (
+              <ClerkSignedIn>
+                <ClerkUserButton appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
+              </ClerkSignedIn>
+            )}
           </div>
         </header>
 

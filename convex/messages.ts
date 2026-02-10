@@ -21,11 +21,12 @@ async function requireMembership(
 
 export const getMessages = query({
   args: {
+    demoClerkId: v.optional(v.string()),
     conversationId: v.id("conversations"),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     await requireMembership(ctx, args.conversationId, me._id);
 
     return await ctx.db
@@ -40,12 +41,13 @@ export const getMessages = query({
 
 export const sendMessage = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     conversationId: v.id("conversations"),
     content: v.string(),
     imageStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const membership = await requireMembership(ctx, args.conversationId, me._id);
 
     const conv = await ctx.db.get(args.conversationId);
@@ -95,9 +97,9 @@ export const sendMessage = mutation({
 });
 
 export const markAsRead = mutation({
-  args: { conversationId: v.id("conversations") },
+  args: { demoClerkId: v.optional(v.string()), conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const membership = await requireMembership(ctx, args.conversationId, me._id);
 
     // Mark unread incoming messages as read (best-effort, cap work).
@@ -122,4 +124,3 @@ export const markAsRead = mutation({
     return true;
   },
 });
-

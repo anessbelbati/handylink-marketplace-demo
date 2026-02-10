@@ -4,9 +4,9 @@ import { ConvexError, v } from "convex/values";
 import { requireUser } from "./lib/auth";
 
 export const getMyProfile = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await requireUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
     return await ctx.db
       .query("providerProfiles")
       .withIndex("by_userId", (q) => q.eq("userId", me._id))
@@ -160,6 +160,7 @@ function sortProviders(
 
 export const updateProviderProfile = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     bio: v.string(),
     categories: v.array(v.string()),
     serviceAreas: v.array(v.string()),
@@ -173,7 +174,7 @@ export const updateProviderProfile = mutation({
     isAvailable: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "provider" && !me.isAdmin) {
       throw new ConvexError("Only providers can edit provider profiles");
     }
@@ -227,9 +228,9 @@ export const updateProviderProfile = mutation({
 });
 
 export const addPortfolioImage = mutation({
-  args: { storageId: v.id("_storage") },
+  args: { demoClerkId: v.optional(v.string()), storageId: v.id("_storage") },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "provider" && !me.isAdmin) {
       throw new ConvexError("Only providers can add portfolio images");
     }

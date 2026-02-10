@@ -13,8 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PublicNav } from "@/components/public-nav";
 import { formatMoney, formatTime } from "@/lib/format";
+import { isDemoAuth } from "@/lib/auth-mode";
+import { useDemoAuth } from "@/lib/demo-auth";
 
-export default function ProviderProfileClient({ userId }: { userId: string }) {
+function ProviderProfileClientClerk({ userId }: { userId: string }) {
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const me = useQuery(api.users.getMe, {});
@@ -48,6 +50,82 @@ export default function ProviderProfileClient({ userId }: { userId: string }) {
     });
     router.push(`/dashboard/messages/${conversationId}`);
   }
+
+  return (
+    <ProviderProfileView
+      userId={userId}
+      provider={provider}
+      reviews={reviews}
+      urls={urls}
+      onContact={onContact}
+    />
+  );
+}
+
+function ProviderProfileClientDemo({ userId }: { userId: string }) {
+  const router = useRouter();
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+  const isSignedIn = !!demoClerkId;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
+
+  const provider = useQuery(api.providers.getProvider, {
+    userId: userId as any,
+  });
+  const reviews = useQuery(api.reviews.getProviderReviews, {
+    providerId: userId as any,
+  });
+  const startConversation = useMutation(api.conversations.startConversation);
+
+  const providerProfile = provider?.profile;
+  const urls = useQuery(
+    api.files.getUrls,
+    providerProfile ? { storageIds: providerProfile.portfolioImages } : "skip",
+  );
+
+  async function onContact() {
+    if (!isSignedIn) {
+      router.push(`/demo?redirect=/providers/${userId}`);
+      return;
+    }
+    if (me === null) {
+      router.push("/demo");
+      return;
+    }
+    if (!provider) return;
+    const conversationId = await startConversation({
+      demoClerkId: demoArg,
+      otherUserId: provider.user._id as any,
+    });
+    router.push(`/dashboard/messages/${conversationId}`);
+  }
+
+  return (
+    <ProviderProfileView
+      userId={userId}
+      provider={provider}
+      reviews={reviews}
+      urls={urls}
+      onContact={onContact}
+    />
+  );
+}
+
+function ProviderProfileView({
+  userId,
+  provider,
+  reviews,
+  urls,
+  onContact,
+}: {
+  userId: string;
+  provider: any;
+  reviews: any;
+  urls: any;
+  onContact: () => void;
+}) {
+  const router = useRouter();
 
   if (provider === undefined) {
     return (
@@ -190,7 +268,7 @@ export default function ProviderProfileClient({ userId }: { userId: string }) {
               <div className="mt-10">
                 <h3 className="text-lg font-semibold text-slate-950">Reviews</h3>
                 <div className="mt-3 space-y-3">
-                  {(reviews ?? []).slice(0, 12).map((r) => (
+                  {(reviews ?? []).slice(0, 12).map((r: any) => (
                     <div
                       key={r.review._id}
                       className="rounded-2xl border bg-white/60 p-4 shadow-soft"
@@ -270,3 +348,5 @@ export default function ProviderProfileClient({ userId }: { userId: string }) {
     </div>
   );
 }
+
+export default isDemoAuth ? ProviderProfileClientDemo : ProviderProfileClientClerk;

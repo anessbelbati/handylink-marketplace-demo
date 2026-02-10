@@ -22,9 +22,9 @@ export const getProviderReviews = query({
 });
 
 export const getMyReviews = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await requireUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "provider" && !me.isAdmin) {
       throw new ConvexError("Forbidden");
     }
@@ -46,12 +46,13 @@ export const getMyReviews = query({
 
 export const createReview = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     requestId: v.id("serviceRequests"),
     rating: v.number(),
     comment: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "client" && !me.isAdmin) {
       throw new ConvexError("Only clients can create reviews");
     }

@@ -6,6 +6,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { ConvexClientProvider } from "./providers";
 import { cn } from "@/lib/cn";
+import { isDemoAuth } from "@/lib/auth-mode";
 
 const heading = Fraunces({
   subsets: ["latin"],
@@ -30,22 +31,24 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html lang="en" className={cn(heading.variable, body.variable)}>
-        <body className="grain">
-          <ConvexClientProvider>
-            {children}
-            <Toaster
-              richColors
-              position="top-right"
-              toastOptions={{
-                className: "glass shadow-soft",
-              }}
-            />
-          </ConvexClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html lang="en" className={cn(heading.variable, body.variable)}>
+      <body className="grain">
+        <ConvexClientProvider>
+          {children}
+          <Toaster
+            richColors
+            position="top-right"
+            toastOptions={{
+              className: "glass shadow-soft",
+            }}
+          />
+        </ConvexClientProvider>
+      </body>
+    </html>
   );
+
+  // Demo mode is a local-dev escape hatch when Clerk dev domains are unreachable.
+  if (isDemoAuth) return content;
+  return <ClerkProvider>{content}</ClerkProvider>;
 }

@@ -7,10 +7,14 @@ import { api } from "@convex/_generated/api";
 import { Avatar } from "@/components/avatar";
 import { RatingStars } from "@/components/rating-stars";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function ReviewsPage() {
-  const me = useQuery(api.users.getMe, {});
-  const reviews = useQuery(api.reviews.getMyReviews, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
+  const reviews = useQuery(api.reviews.getMyReviews, { demoClerkId: demoArg });
 
   if (!me || !reviews) {
     return <div className="glass h-[520px] rounded-3xl shadow-soft" />;
@@ -82,4 +86,3 @@ export default function ReviewsPage() {
     </div>
   );
 }
-

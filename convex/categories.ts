@@ -33,6 +33,7 @@ export const getBySlug = query({
 
 export const upsert = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     slug: v.string(),
     name: v.string(),
     icon: v.string(),
@@ -40,7 +41,7 @@ export const upsert = mutation({
     isActive: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const slug = args.slug.trim().toLowerCase();
@@ -72,9 +73,9 @@ export const upsert = mutation({
 });
 
 export const reorder = mutation({
-  args: { slugs: v.array(v.string()) },
+  args: { demoClerkId: v.optional(v.string()), slugs: v.array(v.string()) },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const all = await ctx.db.query("categories").collect();
@@ -88,4 +89,3 @@ export const reorder = mutation({
     return true;
   },
 });
-

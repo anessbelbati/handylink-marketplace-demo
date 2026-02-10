@@ -4,9 +4,9 @@ import { ConvexError, v } from "convex/values";
 import { requireAdmin, requireUser } from "./lib/auth";
 
 export const claimAdmin = mutation({
-  args: { secret: v.string() },
+  args: { demoClerkId: v.optional(v.string()), secret: v.string() },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const expected = process.env.ADMIN_CLAIM_SECRET;
     if (!expected) throw new ConvexError("ADMIN_CLAIM_SECRET not set");
     if (args.secret !== expected) throw new ConvexError("Forbidden");
@@ -17,9 +17,9 @@ export const claimAdmin = mutation({
 });
 
 export const getAdminStats = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await requireUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const users = await ctx.db.query("users").collect();
@@ -60,12 +60,13 @@ export const getAdminStats = query({
 
 export const getAllUsers = query({
   args: {
+    demoClerkId: v.optional(v.string()),
     role: v.optional(v.union(v.literal("client"), v.literal("provider"), v.literal("admin"))),
     q: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const limit = Math.min(args.limit ?? 100, 200);
@@ -98,6 +99,7 @@ export const getAllUsers = query({
 
 export const getUsersOverview = query({
   args: {
+    demoClerkId: v.optional(v.string()),
     role: v.optional(
       v.union(v.literal("client"), v.literal("provider"), v.literal("admin")),
     ),
@@ -105,7 +107,7 @@ export const getUsersOverview = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const limit = Math.min(args.limit ?? 100, 200);
@@ -148,9 +150,9 @@ export const getUsersOverview = query({
 });
 
 export const toggleUserStatus = mutation({
-  args: { userId: v.id("users"), isSuspended: v.boolean() },
+  args: { demoClerkId: v.optional(v.string()), userId: v.id("users"), isSuspended: v.boolean() },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     await ctx.db.patch(args.userId, { isSuspended: args.isSuspended });
@@ -159,9 +161,9 @@ export const toggleUserStatus = mutation({
 });
 
 export const verifyProvider = mutation({
-  args: { userId: v.id("users"), isVerified: v.boolean() },
+  args: { demoClerkId: v.optional(v.string()), userId: v.id("users"), isVerified: v.boolean() },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const profile = await ctx.db
@@ -176,13 +178,14 @@ export const verifyProvider = mutation({
 
 export const getAllRequests = query({
   args: {
+    demoClerkId: v.optional(v.string()),
     status: v.optional(v.string()),
     categorySlug: v.optional(v.string()),
     city: v.optional(v.string()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const limit = Math.min(args.limit ?? 200, 500);
@@ -197,9 +200,9 @@ export const getAllRequests = query({
 });
 
 export const deleteReview = mutation({
-  args: { reviewId: v.id("reviews") },
+  args: { demoClerkId: v.optional(v.string()), reviewId: v.id("reviews") },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const review = await ctx.db.get(args.reviewId);
@@ -233,9 +236,9 @@ export const deleteReview = mutation({
 });
 
 export const getAllReviews = query({
-  args: { limit: v.optional(v.number()) },
+  args: { demoClerkId: v.optional(v.string()), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     requireAdmin(me);
 
     const limit = Math.min(args.limit ?? 200, 500);

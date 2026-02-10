@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 type Upload = {
   file: File;
@@ -22,7 +23,10 @@ type Upload = {
 export default function NewRequestPage() {
   const router = useRouter();
 
-  const me = useQuery(api.users.getMe, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
   const categories = useQuery(api.categories.listActive, {});
 
   const generateUploadUrl = useAction(api.files.generateUploadUrl);
@@ -135,6 +139,7 @@ export default function NewRequestPage() {
     setIsSubmitting(true);
     try {
       const id = await createRequest({
+        demoClerkId: demoArg,
         categorySlug,
         title: title.trim(),
         description: description.trim(),

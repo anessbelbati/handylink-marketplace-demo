@@ -1,12 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn as ClerkSignedIn,
+  SignedOut as ClerkSignedOut,
+  UserButton as ClerkUserButton,
+} from "@clerk/nextjs";
 
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
+import { isDemoAuth } from "@/lib/auth-mode";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export function PublicNav({ className }: { className?: string }) {
+  const { demoClerkId, clearDemoClerkId } = useDemoAuth();
+
   return (
     <header className={cn("sticky top-0 z-40 border-b bg-white/50 backdrop-blur", className)}>
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -33,23 +41,50 @@ export function PublicNav({ className }: { className?: string }) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <SignedOut>
-            <Button href="/login" variant="outline" size="sm">
-              Sign in
-            </Button>
-            <Button href="/register" size="sm">
-              Create account
-            </Button>
-          </SignedOut>
-          <SignedIn>
-            <Button href="/dashboard" variant="outline" size="sm">
-              Open dashboard
-            </Button>
-            <UserButton appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
-          </SignedIn>
+          {isDemoAuth ? (
+            demoClerkId ? (
+              <>
+                <Button href="/dashboard" variant="outline" size="sm">
+                  Open dashboard
+                </Button>
+                <Button href="/demo" variant="outline" size="sm">
+                  Switch user
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    clearDemoClerkId();
+                  }}
+                >
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <Button href="/demo" variant="outline" size="sm">
+                Demo login
+              </Button>
+            )
+          ) : (
+            <>
+              <ClerkSignedOut>
+                <Button href="/login" variant="outline" size="sm">
+                  Sign in
+                </Button>
+                <Button href="/register" size="sm">
+                  Create account
+                </Button>
+              </ClerkSignedOut>
+              <ClerkSignedIn>
+                <Button href="/dashboard" variant="outline" size="sm">
+                  Open dashboard
+                </Button>
+                <ClerkUserButton appearance={{ elements: { avatarBox: "h-9 w-9" } }} />
+              </ClerkSignedIn>
+            </>
+          )}
         </div>
       </div>
     </header>
   );
 }
-

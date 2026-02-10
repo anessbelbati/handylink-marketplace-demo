@@ -7,10 +7,14 @@ import { Briefcase } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney, formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function QuotesPage() {
-  const me = useQuery(api.users.getMe, {});
-  const quotes = useQuery(api.quotes.getMyQuotes, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
+  const quotes = useQuery(api.quotes.getMyQuotes, { demoClerkId: demoArg });
 
   if (!me || !quotes) {
     return <div className="glass h-[520px] rounded-3xl shadow-soft" />;

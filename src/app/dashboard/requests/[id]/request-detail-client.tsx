@@ -15,12 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoney, formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function RequestDetailClient({ requestId }: { requestId: string }) {
   const router = useRouter();
 
-  const me = useQuery(api.users.getMe, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
   const data = useQuery(api.requests.getRequest, {
+    demoClerkId: demoArg,
     requestId: requestId as any,
   });
 
@@ -54,6 +59,7 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     setIsActing(true);
     try {
       await respondToQuote({
+        demoClerkId: demoArg,
         quoteId: quoteId as any,
         status,
       });
@@ -80,6 +86,7 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     setIsActing(true);
     try {
       await submitQuote({
+        demoClerkId: demoArg,
         requestId: data.request._id as any,
         amount,
         message: quoteMessage.trim(),
@@ -99,6 +106,7 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     setIsActing(true);
     try {
       await updateStatus({
+        demoClerkId: demoArg,
         requestId: data.request._id as any,
         status,
       });
@@ -114,6 +122,7 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     if (!data?.request) return;
     try {
       const cid = await startConversation({
+        demoClerkId: demoArg,
         otherUserId: otherUserId as any,
         requestId: data.request._id as any,
       });
@@ -133,6 +142,7 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     setIsActing(true);
     try {
       await createReview({
+        demoClerkId: demoArg,
         requestId: data.request._id as any,
         rating: reviewRating,
         comment: reviewComment.trim() ? reviewComment.trim() : undefined,

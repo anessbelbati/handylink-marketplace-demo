@@ -5,11 +5,12 @@ import { requireUser } from "./lib/auth";
 
 export const startConversation = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     otherUserId: v.id("users"),
     requestId: v.optional(v.id("serviceRequests")),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (args.otherUserId === me._id) {
       throw new ConvexError("Can't start a conversation with yourself");
     }
@@ -61,9 +62,9 @@ export const startConversation = mutation({
 });
 
 export const getConversations = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await requireUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
 
     const memberships = await ctx.db
       .query("conversationMembers")
@@ -88,9 +89,9 @@ export const getConversations = query({
 });
 
 export const getConversation = query({
-  args: { conversationId: v.id("conversations") },
+  args: { demoClerkId: v.optional(v.string()), conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const membership = await ctx.db
       .query("conversationMembers")
       .withIndex("by_conversationId_userId", (q) =>

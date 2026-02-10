@@ -6,6 +6,7 @@ import { useQuery } from "convex/react";
 
 import { api } from "@convex/_generated/api";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function AdminRequestsPage() {
   const categories = useQuery(api.categories.listAll, {});
@@ -13,7 +14,11 @@ export default function AdminRequestsPage() {
   const [categorySlug, setCategorySlug] = useState("");
   const [city, setCity] = useState("");
 
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
   const requests = useQuery(api.admin.getAllRequests, {
+    demoClerkId: demoArg,
     status: status || undefined,
     categorySlug: categorySlug || undefined,
     city: city.trim() ? city.trim() : undefined,
@@ -111,4 +116,3 @@ export default function AdminRequestsPage() {
     </div>
   );
 }
-

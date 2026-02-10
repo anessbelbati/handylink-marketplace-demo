@@ -3,7 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SignedIn, UserButton } from "@clerk/nextjs";
+import {
+  SignedIn as ClerkSignedIn,
+  UserButton as ClerkUserButton,
+} from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import {
@@ -19,6 +22,8 @@ import { api } from "@convex/_generated/api";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isDemoAuth } from "@/lib/auth-mode";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 const nav = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -30,7 +35,10 @@ const nav = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const me = useQuery(api.users.getMe, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
   const claimAdmin = useMutation(api.admin.claimAdmin);
   const [secret, setSecret] = React.useState("");
   const [isClaiming, setIsClaiming] = React.useState(false);
@@ -70,7 +78,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               onClick={async () => {
                 setIsClaiming(true);
                 try {
-                  await claimAdmin({ secret });
+                  await claimAdmin({ demoClerkId: demoArg, secret });
                   toast.success("Admin enabled");
                 } catch (e: any) {
                   toast.error(e?.message ?? "Failed");
@@ -140,9 +148,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
             <div className="mt-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
               <div className="text-xs text-slate-300">{me.email}</div>
-              <SignedIn>
-                <UserButton appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
-              </SignedIn>
+              {isDemoAuth ? (
+                <Button href="/demo" variant="outline" size="sm">
+                  Switch user
+                </Button>
+              ) : (
+                <ClerkSignedIn>
+                  <ClerkUserButton appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
+                </ClerkSignedIn>
+              )}
             </div>
           </div>
         </aside>

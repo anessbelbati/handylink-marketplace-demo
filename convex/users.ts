@@ -4,9 +4,9 @@ import { ConvexError, v } from "convex/values";
 import { getCurrentUser, requireUser } from "./lib/auth";
 
 export const getMe = query({
-  args: {},
-  handler: async (ctx) => {
-    return await getCurrentUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    return await getCurrentUser(ctx, args.demoClerkId);
   },
 });
 
@@ -45,11 +45,12 @@ export const registerUser = mutation({
 
 export const updateMe = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     fullName: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const patch: { fullName?: string; avatarUrl?: string } = {};
     if (args.fullName !== undefined) patch.fullName = args.fullName;
     if (args.avatarUrl !== undefined) patch.avatarUrl = args.avatarUrl;
@@ -58,3 +59,25 @@ export const updateMe = mutation({
   },
 });
 
+export const listDemoUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    if (process.env.ALLOW_DEMO_AUTH !== "1") {
+      throw new ConvexError("Demo auth is disabled");
+    }
+    const users = await ctx.db.query("users").collect();
+    return users
+      .filter((u) => !u.isSuspended)
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 100)
+      .map((u) => ({
+        _id: u._id,
+        clerkId: u.clerkId,
+        email: u.email,
+        fullName: u.fullName,
+        avatarUrl: u.avatarUrl,
+        role: u.role,
+        isAdmin: u.isAdmin,
+      }));
+  },
+});

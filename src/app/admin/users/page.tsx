@@ -9,12 +9,17 @@ import { api } from "@convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function AdminUsersPage() {
   const [q, setQ] = useState("");
   const [role, setRole] = useState<string>("");
 
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
   const rows = useQuery(api.admin.getUsersOverview, {
+    demoClerkId: demoArg,
     q: q.trim() ? q.trim() : undefined,
     role: role ? (role as any) : undefined,
     limit: 150,
@@ -28,6 +33,7 @@ export default function AdminUsersPage() {
   async function onToggleSuspended(userId: string, isSuspended: boolean) {
     try {
       await toggleStatus({
+        demoClerkId: demoArg,
         userId: userId as any,
         isSuspended: !isSuspended,
       });
@@ -40,6 +46,7 @@ export default function AdminUsersPage() {
   async function onToggleVerified(userId: string, next: boolean) {
     try {
       await verifyProvider({
+        demoClerkId: demoArg,
         userId: userId as any,
         isVerified: next,
       });

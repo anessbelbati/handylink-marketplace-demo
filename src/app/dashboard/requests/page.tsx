@@ -8,10 +8,14 @@ import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function RequestsPage() {
-  const me = useQuery(api.users.getMe, {});
-  const requests = useQuery(api.requests.getRequests, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
+  const requests = useQuery(api.requests.getRequests, { demoClerkId: demoArg });
 
   if (!me || !requests) {
     return <div className="glass h-[420px] rounded-3xl shadow-soft" />;

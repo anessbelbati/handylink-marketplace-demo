@@ -11,10 +11,12 @@ import { api } from "@convex/_generated/api";
 import { PublicNav } from "@/components/public-nav";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { isDemoAuth } from "@/lib/auth-mode";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 type Role = "client" | "provider";
 
-export default function OnboardingPage() {
+function OnboardingClerkPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
 
@@ -115,6 +117,41 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
+function OnboardingDemoPage() {
+  const router = useRouter();
+  const { demoClerkId } = useDemoAuth();
+
+  useEffect(() => {
+    if (demoClerkId) router.replace("/dashboard");
+  }, [demoClerkId, router]);
+
+  return (
+    <div className="min-h-screen">
+      <PublicNav />
+
+      <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6">
+        <div className="glass rounded-3xl p-6 shadow-glow sm:p-8">
+          <h1 className="text-3xl font-semibold text-slate-950">
+            Demo mode
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Onboarding is skipped when `NEXT_PUBLIC_AUTH_MODE=demo`. Select a
+            seeded user to continue.
+          </p>
+
+          <div className="mt-6">
+            <Button href="/demo" size="lg">
+              Go to demo login
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default isDemoAuth ? OnboardingDemoPage : OnboardingClerkPage;
 
 function RoleCard({
   title,

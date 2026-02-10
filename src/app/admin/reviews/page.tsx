@@ -8,14 +8,19 @@ import { api } from "@convex/_generated/api";
 import { RatingStars } from "@/components/rating-stars";
 import { Button } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function AdminReviewsPage() {
-  const reviews = useQuery(api.admin.getAllReviews, { limit: 300 });
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const reviews = useQuery(api.admin.getAllReviews, { demoClerkId: demoArg, limit: 300 });
   const del = useMutation(api.admin.deleteReview);
 
   async function onDelete(reviewId: string) {
     try {
       await del({
+        demoClerkId: demoArg,
         reviewId: reviewId as any,
       });
       toast.success("Deleted");
@@ -43,7 +48,7 @@ export default function AdminReviewsPage() {
               <div>
                 <div className="text-sm font-semibold text-white">
                   {r.provider?.fullName ?? "Provider"}{" "}
-                  <span className="text-slate-400">←</span>{" "}
+                  <span className="text-slate-400">{"<-"}</span>{" "}
                   {r.client?.fullName ?? "Client"}
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-xs text-slate-300">

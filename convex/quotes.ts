@@ -5,12 +5,13 @@ import { requireUser } from "./lib/auth";
 
 export const submitQuote = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     requestId: v.id("serviceRequests"),
     amount: v.number(),
     message: v.string(),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "provider" && !me.isAdmin) {
       throw new ConvexError("Only providers can submit quotes");
     }
@@ -60,11 +61,12 @@ export const submitQuote = mutation({
 
 export const respondToQuote = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     quoteId: v.id("quotes"),
     status: v.union(v.literal("accepted"), v.literal("declined")),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const quote = await ctx.db.get(args.quoteId);
     if (!quote) throw new ConvexError("Quote not found");
 
@@ -125,9 +127,9 @@ export const respondToQuote = mutation({
 });
 
 export const getMyQuotes = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await requireUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "provider" && !me.isAdmin) {
       throw new ConvexError("Forbidden");
     }

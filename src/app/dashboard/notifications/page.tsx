@@ -9,14 +9,21 @@ import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function NotificationsPage() {
-  const notifications = useQuery(api.notifications.getNotifications, { limit: 100 });
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const notifications = useQuery(api.notifications.getNotifications, {
+    demoClerkId: demoArg,
+    limit: 100,
+  });
   const markRead = useMutation(api.notifications.markNotificationsRead);
 
   async function onMarkAllRead() {
     try {
-      await markRead({});
+      await markRead({ demoClerkId: demoArg });
       toast.success("Marked as read");
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
@@ -109,4 +116,3 @@ function iconForNotification(type: string) {
       return Bell;
   }
 }
-

@@ -8,6 +8,7 @@ import { api } from "@convex/_generated/api";
 import { Avatar } from "@/components/avatar";
 import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export function ConversationList({
   className,
@@ -17,7 +18,12 @@ export function ConversationList({
   selectedId?: string;
 }) {
   const pathname = usePathname();
-  const conversations = useQuery(api.conversations.getConversations, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const conversations = useQuery(api.conversations.getConversations, {
+    demoClerkId: demoArg,
+  });
 
   if (!conversations) {
     return <div className={cn("glass h-[520px] rounded-3xl shadow-soft", className)} />;
@@ -85,4 +91,3 @@ export function ConversationList({
     </div>
   );
 }
-

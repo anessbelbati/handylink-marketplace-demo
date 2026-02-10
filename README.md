@@ -45,6 +45,20 @@ npm run seed -- --force
 
 This seeds categories, providers, requests, quotes, conversations, reviews, and also seeds demo images (Unsplash source with a Picsum fallback).
 
+## Demo Mode (Local Fallback)
+
+If Clerk dev domains (`*.clerk.accounts.dev`) are unreachable (DNS/outage/corporate network), you can still test everything locally using seeded users:
+
+1. Set `NEXT_PUBLIC_AUTH_MODE=demo` in `.env.local`
+
+2. Enable demo auth on your Convex *dev* deployment:
+
+```bash
+npx convex env set ALLOW_DEMO_AUTH 1
+```
+
+3. Start the app and open `/demo` to pick a user.
+
 ## Clerk + Convex Auth
 
 1. In Clerk Dashboard, create an app and grab:
@@ -103,4 +117,3 @@ npm run seed -- --force
 
 - Public browsing is available without auth (`/`, `/providers`, `/providers/[id]`).
 - Dashboard and admin routes require Clerk auth.
-

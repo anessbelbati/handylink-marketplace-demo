@@ -12,11 +12,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function ProviderProfilePage() {
-  const me = useQuery(api.users.getMe, {});
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
+
+  const me = useQuery(api.users.getMe, { demoClerkId: demoArg });
   const categories = useQuery(api.categories.listActive, {});
-  const profile = useQuery(api.providers.getMyProfile, {});
+  const profile = useQuery(api.providers.getMyProfile, { demoClerkId: demoArg });
 
   const updateProfile = useMutation(api.providers.updateProviderProfile);
   const addPortfolioImage = useMutation(api.providers.addPortfolioImage);
@@ -99,6 +103,7 @@ export default function ProviderProfilePage() {
     try {
       const storageId = await uploadFile(file);
       await addPortfolioImage({
+        demoClerkId: demoArg,
         storageId: storageId as any,
       });
       toast.success("Added image");
@@ -132,6 +137,7 @@ export default function ProviderProfilePage() {
     setIsSaving(true);
     try {
       await updateProfile({
+        demoClerkId: demoArg,
         bio: bio.trim(),
         categories: selectedCategories,
         serviceAreas: serviceAreas

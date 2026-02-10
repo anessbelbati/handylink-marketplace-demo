@@ -9,11 +9,15 @@ import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function AdminCategoriesPage() {
   const categories = useQuery(api.categories.listAll, {});
   const upsert = useMutation(api.categories.upsert);
   const reorder = useMutation(api.categories.reorder);
+
+  const { demoClerkId } = useDemoAuth();
+  const demoArg = demoClerkId ?? undefined;
 
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
@@ -46,6 +50,7 @@ export default function AdminCategoriesPage() {
     setIsSaving(true);
     try {
       await upsert({
+        demoClerkId: demoArg,
         slug: s,
         name: name.trim(),
         icon: icon.trim() || "wrench",
@@ -74,7 +79,7 @@ export default function AdminCategoriesPage() {
 
     setIsReordering(true);
     try {
-      await reorder({ slugs: copy.map((c) => c.slug) });
+      await reorder({ demoClerkId: demoArg, slugs: copy.map((c) => c.slug) });
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to reorder");
     } finally {

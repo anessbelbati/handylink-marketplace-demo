@@ -4,9 +4,9 @@ import { v } from "convex/values";
 import { requireUser } from "./lib/auth";
 
 export const getNotifications = query({
-  args: { limit: v.optional(v.number()) },
+  args: { demoClerkId: v.optional(v.string()), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const limit = Math.min(args.limit ?? 50, 200);
 
     const rows = await ctx.db
@@ -21,9 +21,9 @@ export const getNotifications = query({
 });
 
 export const getUnreadCount = query({
-  args: {},
-  handler: async (ctx) => {
-    const me = await requireUser(ctx);
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
     const rows = await ctx.db
       .query("notifications")
       .withIndex("by_userId", (q) => q.eq("userId", me._id))
@@ -33,9 +33,12 @@ export const getUnreadCount = query({
 });
 
 export const markNotificationsRead = mutation({
-  args: { ids: v.optional(v.array(v.id("notifications"))) },
+  args: {
+    demoClerkId: v.optional(v.string()),
+    ids: v.optional(v.array(v.id("notifications"))),
+  },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (args.ids && args.ids.length > 0) {
       for (const id of args.ids) {
         const n = await ctx.db.get(id);
@@ -57,4 +60,3 @@ export const markNotificationsRead = mutation({
     return true;
   },
 });
-

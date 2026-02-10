@@ -6,6 +6,7 @@ import { requireUser } from "./lib/auth";
 
 export const createRequest = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     categorySlug: v.string(),
     title: v.string(),
     description: v.string(),
@@ -19,7 +20,7 @@ export const createRequest = mutation({
     budgetMax: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     if (me.role !== "client" && !me.isAdmin) {
       throw new ConvexError("Only clients can create service requests");
     }
@@ -48,9 +49,9 @@ export const createRequest = mutation({
 });
 
 export const getRequests = query({
-  args: { status: v.optional(v.string()) },
+  args: { demoClerkId: v.optional(v.string()), status: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
 
     if (me.role === "client") {
       const rows = await ctx.db
@@ -88,9 +89,9 @@ export const getRequests = query({
 });
 
 export const getRequest = query({
-  args: { requestId: v.id("serviceRequests") },
+  args: { demoClerkId: v.optional(v.string()), requestId: v.id("serviceRequests") },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const req = await ctx.db.get(args.requestId);
     if (!req) return null;
 
@@ -155,6 +156,7 @@ export const getRequest = query({
 
 export const updateRequestStatus = mutation({
   args: {
+    demoClerkId: v.optional(v.string()),
     requestId: v.id("serviceRequests"),
     status: v.union(
       v.literal("open"),
@@ -165,7 +167,7 @@ export const updateRequestStatus = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const me = await requireUser(ctx);
+    const me = await requireUser(ctx, args.demoClerkId);
     const req = await ctx.db.get(args.requestId);
     if (!req) throw new ConvexError("Not found");
 
