@@ -1,8 +1,14 @@
 import { SignIn } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
 import { PublicNav } from "@/components/public-nav";
+import { isDemoAuth } from "@/lib/auth-mode";
 
 export default function LoginPage() {
+  if (isDemoAuth) {
+    redirect("/demo?redirect=%2Fdashboard");
+  }
+
   return (
     <div className="min-h-screen">
       <PublicNav />
@@ -26,4 +32,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
