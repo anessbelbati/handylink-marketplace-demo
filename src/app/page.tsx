@@ -3,6 +3,7 @@ import { ArrowRight, ShieldCheck, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CategoryGrid } from "@/components/category-grid";
+import { HeroSearch } from "@/components/hero-search";
 import { PublicNav } from "@/components/public-nav";
 
 export default function HomePage() {
@@ -27,7 +28,9 @@ export default function HomePage() {
               provider. Built end-to-end with Next.js + Convex + Clerk.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <HeroSearch />
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/providers">
                   Browse providers <ArrowRight className="ml-2 h-4 w-4" />
@@ -121,4 +124,3 @@ export default function HomePage() {
     </div>
   );
 }
-

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAction, useMutation, useQuery } from "convex/react";
@@ -12,6 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 import { useDemoAuth } from "@/lib/demo-auth";
+
+const LocationPicker = dynamic(() => import("@/components/location-picker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[260px] w-full animate-pulse rounded-3xl border bg-white/50" />
+  ),
+});
 
 type Upload = {
   file: File;
@@ -44,6 +52,7 @@ export default function NewRequestPage() {
   const [lng, setLng] = useState<number | null>(null);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
 
   const canSubmit = useMemo(() => {
     return (
@@ -74,7 +83,9 @@ export default function NewRequestPage() {
   }
 
   async function uploadOne(file: File) {
-    const uploadUrl = await generateUploadUrl({});
+    const uploadUrl = await generateUploadUrl(
+      demoArg ? { demoClerkId: demoArg } : {},
+    );
     const res = await fetch(uploadUrl, {
       method: "POST",
       headers: { "Content-Type": file.type },
@@ -87,7 +98,22 @@ export default function NewRequestPage() {
 
   async function onAddFiles(files: FileList | null) {
     if (!files) return;
-    const list = Array.from(files).slice(0, 6);
+
+    const remaining = Math.max(0, 6 - uploads.length);
+    if (remaining === 0) {
+      toast.error("Maximum 6 photos");
+      return;
+    }
+
+    const list = Array.from(files)
+      .filter((f) => f.type.startsWith("image/"))
+      .slice(0, remaining);
+
+    if (list.length === 0) {
+      toast.error("Please choose image files");
+      return;
+    }
+
     const next: Upload[] = list.map((file) => ({
       file,
       previewUrl: URL.createObjectURL(file),
@@ -118,6 +144,11 @@ export default function NewRequestPage() {
   }
 
   async function onRemoveUpload(previewUrl: string) {
+    try {
+      URL.revokeObjectURL(previewUrl);
+    } catch {
+      // ignore
+    }
     setUploads((cur) => cur.filter((u) => u.previewUrl !== previewUrl));
   }
 
@@ -288,34 +319,57 @@ export default function NewRequestPage() {
                 </label>
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-3">
-                {uploads.map((u) => (
-                  <div
-                    key={u.previewUrl}
-                    className="group relative aspect-square overflow-hidden rounded-2xl border bg-slate-900/5"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={u.previewUrl}
-                      alt="upload preview"
-                      className="h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/20" />
-                    <button
-                      type="button"
-                      onClick={() => onRemoveUpload(u.previewUrl)}
-                      className="absolute right-2 top-2 hidden rounded-xl bg-white/90 p-2 text-slate-800 shadow-soft group-hover:block"
-                      title="Remove"
+              <div
+                className={cn(
+                  "mt-3 rounded-2xl border border-dashed p-3 transition",
+                  isDraggingFiles
+                    ? "border-brand-500 bg-brand-50"
+                    : "border-border/70 bg-white/40",
+                )}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFiles(true);
+                }}
+                onDragLeave={() => setIsDraggingFiles(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFiles(false);
+                  onAddFiles(e.dataTransfer.files);
+                }}
+              >
+                <div className="grid grid-cols-3 gap-3">
+                  {uploads.map((u) => (
+                    <div
+                      key={u.previewUrl}
+                      className="group relative aspect-square overflow-hidden rounded-2xl border bg-slate-900/5"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                    {u.isUploading ? (
-                      <div className="absolute inset-0 grid place-items-center bg-white/60 text-xs font-medium text-slate-700">
-                        Uploading...
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={u.previewUrl}
+                        alt="upload preview"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/20" />
+                      <button
+                        type="button"
+                        onClick={() => onRemoveUpload(u.previewUrl)}
+                        className="absolute right-2 top-2 hidden rounded-xl bg-white/90 p-2 text-slate-800 shadow-soft group-hover:block"
+                        title="Remove"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      {u.isUploading ? (
+                        <div className="absolute inset-0 grid place-items-center bg-white/60 text-xs font-medium text-slate-700">
+                          Uploading...
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 text-center text-xs text-slate-600">
+                  Drag and drop images here (or use the Add button).
+                </div>
               </div>
             </div>
 
@@ -379,6 +433,23 @@ export default function NewRequestPage() {
                       readOnly
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="text-xs font-medium text-slate-700">
+                  Pick on map (click to drop a pin)
+                </div>
+                <div className="mt-2">
+                  <LocationPicker
+                    value={
+                      lat !== null && lng !== null ? { lat, lng } : null
+                    }
+                    onChange={(v) => {
+                      setLat(v.lat);
+                      setLng(v.lng);
+                    }}
+                  />
                 </div>
               </div>
             </div>

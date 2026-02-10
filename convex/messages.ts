@@ -39,6 +39,47 @@ export const getMessages = query({
   },
 });
 
+export const getTyping = query({
+  args: {
+    demoClerkId: v.optional(v.string()),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
+    await requireMembership(ctx, args.conversationId, me._id);
+
+    const now = Date.now();
+    const members = await ctx.db
+      .query("conversationMembers")
+      .withIndex("by_conversationId", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .collect();
+
+    const otherTyping = members.some(
+      (m) =>
+        m.userId !== me._id &&
+        (m.lastTypingAt ?? 0) > now - 3000,
+    );
+
+    return { otherTyping };
+  },
+});
+
+export const setTyping = mutation({
+  args: {
+    demoClerkId: v.optional(v.string()),
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const me = await requireUser(ctx, args.demoClerkId);
+    const membership = await requireMembership(ctx, args.conversationId, me._id);
+
+    await ctx.db.patch(membership._id, { lastTypingAt: Date.now() });
+    return true;
+  },
+});
+
 export const sendMessage = mutation({
   args: {
     demoClerkId: v.optional(v.string()),

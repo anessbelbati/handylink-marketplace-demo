@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "convex/react";
 
 import { categoryIconMap, categorySeeds } from "@/lib/categories";
 import { cn } from "@/lib/cn";
+import { api } from "@convex/_generated/api";
 
 type Category = {
   slug: string;
@@ -12,13 +14,13 @@ type Category = {
 };
 
 export function CategoryGrid({ compact = false }: { compact?: boolean }) {
-  // In the fully wired app this is loaded from Convex.
-  // We render a seeded fallback so landing pages look complete before seeding.
-  const categories: Category[] = categorySeeds.map((c) => ({
-    slug: c.slug,
-    name: c.name,
-    icon: c.icon,
-  }));
+  const fromDb = useQuery(api.categories.listActive, {});
+
+  // Render a seeded fallback so landing pages look complete before seeding.
+  const categories: Category[] =
+    fromDb && fromDb.length > 0
+      ? fromDb.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }))
+      : categorySeeds.map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }));
 
   return (
     <div
@@ -47,4 +49,3 @@ export function CategoryGrid({ compact = false }: { compact?: boolean }) {
     </div>
   );
 }
-

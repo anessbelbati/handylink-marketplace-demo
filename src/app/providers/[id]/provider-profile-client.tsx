@@ -169,6 +169,13 @@ function ProviderProfileView({
       : "Custom pricing";
 
   const galleryUrls = Object.values(urls ?? {}).filter(Boolean) as string[];
+  const serviceAreas = (profile.serviceAreas ?? []).filter(Boolean) as string[];
+  const serviceAreasLabel =
+    serviceAreas.length === 0
+      ? profile.city
+      : serviceAreas.length <= 3
+        ? serviceAreas.join(", ")
+        : `${serviceAreas.slice(0, 3).join(", ")} +${serviceAreas.length - 3}`;
 
   return (
     <div className="min-h-screen">
@@ -319,6 +326,12 @@ function ProviderProfileView({
                   <div className="flex items-center justify-between">
                     <span className="text-slate-600">City</span>
                     <span className="font-medium">{profile.city}</span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-600">Service areas</span>
+                    <span className="text-right font-medium">
+                      {serviceAreasLabel}
+                    </span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
                     <span className="text-slate-600">Address</span>

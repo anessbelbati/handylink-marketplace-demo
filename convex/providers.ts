@@ -179,6 +179,10 @@ export const updateProviderProfile = mutation({
       throw new ConvexError("Only providers can edit provider profiles");
     }
 
+    const serviceAreas = Array.from(
+      new Set(args.serviceAreas.map((s) => s.trim()).filter(Boolean)),
+    ).slice(0, 20);
+
     const now = Date.now();
     const existing = await ctx.db
       .query("providerProfiles")
@@ -189,7 +193,7 @@ export const updateProviderProfile = mutation({
       await ctx.db.patch(existing._id, {
         bio: args.bio,
         categories: args.categories,
-        serviceAreas: args.serviceAreas,
+        serviceAreas,
         rateMin: args.rateMin,
         rateMax: args.rateMax,
         yearsExperience: args.yearsExperience,
@@ -207,7 +211,7 @@ export const updateProviderProfile = mutation({
       userId: me._id,
       bio: args.bio,
       categories: args.categories,
-      serviceAreas: args.serviceAreas,
+      serviceAreas,
       portfolioImages: [],
       rateMin: args.rateMin,
       rateMax: args.rateMax,

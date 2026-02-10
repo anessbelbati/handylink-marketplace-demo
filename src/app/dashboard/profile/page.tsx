@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useAction, useMutation, useQuery } from "convex/react";
@@ -13,6 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import { useDemoAuth } from "@/lib/demo-auth";
+
+const LocationPicker = dynamic(() => import("@/components/location-picker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[260px] w-full animate-pulse rounded-3xl border bg-white/50" />
+  ),
+});
 
 export default function ProviderProfilePage() {
   const { demoClerkId } = useDemoAuth();
@@ -86,7 +94,9 @@ export default function ProviderProfilePage() {
   }
 
   async function uploadFile(file: File) {
-    const uploadUrl = await generateUploadUrl({});
+    const uploadUrl = await generateUploadUrl(
+      demoArg ? { demoClerkId: demoArg } : {},
+    );
     const res = await fetch(uploadUrl, {
       method: "POST",
       headers: { "Content-Type": file.type },
@@ -300,6 +310,21 @@ export default function ProviderProfilePage() {
           </div>
 
           <div className="glass rounded-3xl p-6 shadow-soft">
+            <div className="text-sm font-semibold text-slate-950">
+              Service areas
+            </div>
+            <div className="mt-1 text-xs text-slate-600">
+              Comma-separated (used to match requests).
+            </div>
+            <Input
+              className="mt-3"
+              value={serviceAreas}
+              onChange={(e) => setServiceAreas(e.target.value)}
+              placeholder="San Francisco, Oakland"
+            />
+          </div>
+
+          <div className="glass rounded-3xl p-6 shadow-soft">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-slate-950">
@@ -382,9 +407,26 @@ export default function ProviderProfilePage() {
                     readOnly
                   />
                 </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="text-xs font-medium text-slate-700">
+                  Pick on map (click to drop a pin)
+                </div>
+                <div className="mt-2">
+                  <LocationPicker
+                    value={
+                      lat !== null && lng !== null ? { lat, lng } : null
+                    }
+                    onChange={(v) => {
+                      setLat(v.lat);
+                      setLng(v.lng);
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
           <div className="glass rounded-3xl p-6 shadow-soft">
             <div className="text-sm font-semibold text-slate-950">Pricing</div>

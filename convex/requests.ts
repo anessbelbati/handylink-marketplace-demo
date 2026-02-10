@@ -70,10 +70,23 @@ export const getRequests = query({
         .unique();
       if (!profile) return [];
 
-      const rows = await ctx.db
-        .query("serviceRequests")
-        .withIndex("by_city", (q) => q.eq("city", profile.city))
-        .collect();
+      const areas = Array.from(
+        new Set([profile.city, ...(profile.serviceAreas ?? [])]),
+      )
+        .map((s) => (typeof s === "string" ? s.trim() : ""))
+        .filter(Boolean);
+
+      // Collect requests in each service area. For demo scale this is plenty fast.
+      const byId = new Map<string, any>();
+      for (const area of areas) {
+        const cityRows = await ctx.db
+          .query("serviceRequests")
+          .withIndex("by_city", (q) => q.eq("city", area))
+          .collect();
+        for (const r of cityRows) byId.set(String(r._id), r);
+      }
+
+      const rows = Array.from(byId.values());
 
       return rows
         .filter((r) => r.status === "open")
@@ -102,8 +115,15 @@ export const getRequest = query({
         .query("providerProfiles")
         .withIndex("by_userId", (q) => q.eq("userId", me._id))
         .unique();
-      if (profile && profile.city === req.city) {
-        allowed = profile.categories.includes(req.categorySlug);
+      if (profile) {
+        const areas = new Set<string>(
+          [profile.city, ...(profile.serviceAreas ?? [])]
+            .map((s) => s.trim())
+            .filter(Boolean),
+        );
+        if (areas.has(req.city)) {
+          allowed = profile.categories.includes(req.categorySlug);
+        }
       }
       // Providers who already quoted can always view.
       const existingQuote = await ctx.db

@@ -122,6 +122,7 @@ export default defineSchema({
     otherUserId: v.id("users"),
     unreadCount: v.number(),
     lastReadAt: v.number(),
+    lastTypingAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_userId", ["userId"])
@@ -163,4 +164,3 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
 });
-

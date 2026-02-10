@@ -30,9 +30,14 @@ export default function ConversationThread({
     demoClerkId: demoArg,
     conversationId: conversationId as any,
   });
+  const typing = useQuery(api.messages.getTyping, {
+    demoClerkId: demoArg,
+    conversationId: conversationId as any,
+  });
 
   const markAsRead = useMutation(api.messages.markAsRead);
   const sendMessage = useMutation(api.messages.sendMessage);
+  const setTyping = useMutation(api.messages.setTyping);
   const generateUploadUrl = useAction(api.files.generateUploadUrl);
 
   const {
@@ -70,6 +75,7 @@ export default function ConversationThread({
   const [isSending, setIsSending] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const lastTypingSentAtRef = useRef<number>(0);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -85,7 +91,9 @@ export default function ConversationThread({
   }, [messages.length]);
 
   async function uploadImage(file: File) {
-    const uploadUrl = await generateUploadUrl({});
+    const uploadUrl = await generateUploadUrl(
+      demoArg ? { demoClerkId: demoArg } : {},
+    );
     const res = await fetch(uploadUrl, {
       method: "POST",
       headers: { "Content-Type": file.type },
@@ -155,7 +163,11 @@ export default function ConversationThread({
             <div className="text-sm font-semibold text-slate-950">
               {other?.fullName ?? "Conversation"}
             </div>
-            {conversation?.request ? (
+            {typing?.otherTyping ? (
+              <div className="text-xs font-medium text-emerald-700">
+                Typing...
+              </div>
+            ) : conversation?.request ? (
               <Link
                 href={`/dashboard/requests/${conversation.request._id}`}
                 className="text-xs text-slate-600 hover:underline"
@@ -263,7 +275,21 @@ export default function ConversationThread({
           </label>
           <Input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setText(next);
+
+              if (!me) return;
+              if (!next.trim()) return;
+              const now = Date.now();
+              if (now - lastTypingSentAtRef.current < 1200) return;
+              lastTypingSentAtRef.current = now;
+              // Best-effort, ignore failures.
+              setTyping({
+                demoClerkId: demoArg,
+                conversationId: conversationId as any,
+              }).catch(() => {});
+            }}
             placeholder="Message..."
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {

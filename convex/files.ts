@@ -1,9 +1,20 @@
 import { action, query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
+
+import { api } from "./_generated/api";
 
 export const generateUploadUrl = action({
-  args: {},
-  handler: async (ctx) => {
+  args: { demoClerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    // Only authenticated users can upload files.
+    // (In demo auth mode, this is guarded by `ALLOW_DEMO_AUTH` in convex/lib/auth.ts via users.getMe.)
+    const me = await ctx.runQuery(
+      api.users.getMe,
+      args.demoClerkId ? { demoClerkId: args.demoClerkId } : {},
+    );
+    if (!me) throw new ConvexError("Unauthorized");
+    if (me.isSuspended) throw new ConvexError("Account suspended");
+
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -24,4 +35,3 @@ export const getUrls = query({
     return Object.fromEntries(entries);
   },
 });
-
