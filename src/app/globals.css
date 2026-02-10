@@ -1,0 +1,72 @@
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 210 40% 98%;
+  --fg: 222 47% 11%;
+  --card: 0 0% 100%;
+  --muted: 210 40% 96%;
+  --border: 214 32% 91%;
+
+  /* sea-glass brand palette (avoid purple defaults) */
+  --brand-50: 168 70% 96%;
+  --brand-100: 168 65% 90%;
+  --brand-500: 168 58% 36%;
+  --brand-600: 168 62% 30%;
+  --brand-700: 168 68% 24%;
+
+  --amber-500: 38 92% 50%;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: hsl(var(--fg));
+  background: radial-gradient(1200px 800px at 12% -10%, rgba(16, 185, 129, 0.14), transparent 55%),
+    radial-gradient(1000px 700px at 90% 10%, rgba(59, 130, 246, 0.12), transparent 52%),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.02));
+  background-color: hsl(var(--bg));
+  font-family: var(--font-body);
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .grain {
+    position: relative;
+  }
+
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.12;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+}
+
