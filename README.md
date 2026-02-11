@@ -88,6 +88,33 @@ npx convex env set ADMIN_CLAIM_SECRET "your-long-random-secret"
 
 Then open `/admin` while signed in and enter that secret once to mark your user as admin.
 
+## Payments (Polar)
+
+Optional provider billing via Polar (useful as a "real payments" add-on for the demo).
+
+Note: Polar is great for subscriptions / credits. It is **not** a marketplace payout solution (client-to-provider payouts usually require Stripe Connect or similar).
+
+1. Create a Polar product for your "Provider Pro" plan (sandbox or production) and copy the Product ID (UUID).
+
+2. Create a Polar access token with the needed scopes (at least `checkouts:write` for starting checkout sessions).
+
+3. Set Convex env vars:
+
+```bash
+npx convex env set POLAR_SERVER sandbox
+npx convex env set POLAR_ACCESS_TOKEN "..."
+npx convex env set POLAR_PRO_PRODUCT_ID "..."
+npx convex env set POLAR_WEBHOOK_SECRET "..."
+```
+
+4. Configure a Polar webhook to point to your Convex HTTP endpoint:
+
+```txt
+https://<your-convex-deployment>.convex.site/polar/webhook
+```
+
+5. Open `/dashboard/billing` as a provider and click "Upgrade to Pro".
+
 ## Deployment (Vercel + Convex)
 
 1. Deploy Convex

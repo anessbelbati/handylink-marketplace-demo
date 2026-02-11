@@ -46,6 +46,11 @@ export function ProviderCard({
                   <ShieldCheck className="h-4 w-4 text-brand-700" />
                 </span>
               ) : null}
+              {user.plan === "pro" ? (
+                <Badge variant="success" title="Pro plan">
+                  Pro
+                </Badge>
+              ) : null}
             </div>
 
             <div className="mt-1 flex items-center gap-2 text-sm text-slate-600">

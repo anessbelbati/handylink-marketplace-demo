@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
-import { ImagePlus, LocateFixed, Save } from "lucide-react";
+import { CreditCard, ImagePlus, LocateFixed, Save } from "lucide-react";
 
 import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -266,6 +266,29 @@ export default function ProviderProfilePage() {
         </div>
 
         <div className="lg:col-span-5 space-y-6">
+          <div className="glass rounded-3xl p-6 shadow-soft">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-950">
+                  Billing
+                </div>
+                <div className="mt-1 text-xs text-slate-600">
+                  Upgrade to Pro and manage your plan.
+                </div>
+              </div>
+              <Button href="/dashboard/billing" variant="outline" size="sm">
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </Button>
+            </div>
+            <div className="mt-3 text-xs text-slate-600">
+              Current:{" "}
+              <Badge variant={me.plan === "pro" ? "success" : "muted"}>
+                {me.plan === "pro" ? "Pro" : "Free"}
+              </Badge>
+            </div>
+          </div>
+
           <div className="glass rounded-3xl p-6 shadow-soft">
             <div className="text-sm font-semibold text-slate-950">Categories</div>
             <div className="mt-3 flex flex-wrap gap-2">

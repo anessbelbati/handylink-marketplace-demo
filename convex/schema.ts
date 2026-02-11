@@ -10,6 +10,10 @@ export default defineSchema({
     role: v.union(v.literal("client"), v.literal("provider"), v.literal("admin")),
     isSuspended: v.boolean(),
     isAdmin: v.boolean(),
+    // Optional billing state (kept on the user for easy UI display / filtering).
+    plan: v.optional(v.union(v.literal("free"), v.literal("pro"))),
+    planUpdatedAt: v.optional(v.number()),
+    polarCustomerId: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_clerkId", ["clerkId"])
