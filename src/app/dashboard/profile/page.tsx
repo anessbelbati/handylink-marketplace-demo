@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { CreditCard, ImagePlus, LocateFixed, Save } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,9 @@ const LocationPicker = dynamic(() => import("@/components/location-picker"), {
 });
 
 export default function ProviderProfilePage() {
+  const router = useRouter();
+  const sp = useSearchParams();
+
   const { demoClerkId } = useDemoAuth();
   const demoArg = demoClerkId ?? undefined;
 
@@ -33,6 +37,8 @@ export default function ProviderProfilePage() {
   const updateProfile = useMutation(api.providers.updateProviderProfile);
   const addPortfolioImage = useMutation(api.providers.addPortfolioImage);
   const generateUploadUrl = useAction(api.files.generateUploadUrl);
+  const connectStripe = useAction(api.stripe.createConnectOnboardingLink);
+  const syncStripe = useAction(api.stripe.syncMyConnectAccount);
 
   const urls = useQuery(
     api.files.getUrls,
@@ -51,6 +57,7 @@ export default function ProviderProfilePage() {
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isStripeActing, setIsStripeActing] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -70,6 +77,35 @@ export default function ProviderProfilePage() {
   }, [profile?._id]);
 
   const canEdit = me?.role === "provider" || me?.isAdmin;
+
+  const stripeAccountId = me?.stripeConnectAccountId ?? null;
+  const stripeReady = !!me?.stripeChargesEnabled && !!me?.stripePayoutsEnabled;
+  const stripeNeedsOnboarding = !!stripeAccountId && !stripeReady;
+
+  useEffect(() => {
+    const status = sp.get("stripe");
+    if (!status) return;
+
+    if (status === "refresh") {
+      toast("Stripe onboarding not completed yet");
+      router.replace("/dashboard/profile");
+      return;
+    }
+
+    if (status === "return") {
+      // Best-effort sync to show status immediately in dev without webhooks.
+      (async () => {
+        try {
+          await syncStripe(demoArg ? { demoClerkId: demoArg } : {});
+          toast.success("Stripe connected");
+        } catch (e: any) {
+          toast.error(e?.message ?? "Failed to sync Stripe status");
+        } finally {
+          router.replace("/dashboard/profile");
+        }
+      })();
+    }
+  }, [demoArg, router, sp, syncStripe]);
 
   const categoryNameBySlug = useMemo(() => {
     const map: Record<string, string> = {};
@@ -270,22 +306,48 @@ export default function ProviderProfilePage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-slate-950">
-                  Billing
+                  Payouts (Stripe)
                 </div>
                 <div className="mt-1 text-xs text-slate-600">
-                  Upgrade to Pro and manage your plan.
+                  Connect a Stripe Express account so clients can pay you.
                 </div>
               </div>
-              <Button href="/dashboard/billing" variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isStripeActing}
+                onClick={async () => {
+                  setIsStripeActing(true);
+                  try {
+                    const { url } = await connectStripe({
+                      demoClerkId: demoArg,
+                      origin: window.location.origin,
+                    });
+                    window.location.href = url;
+                  } catch (e: any) {
+                    toast.error(e?.message ?? "Failed to start Stripe onboarding");
+                    setIsStripeActing(false);
+                  }
+                }}
+              >
                 <CreditCard className="h-4 w-4" />
-                Billing
+                {!stripeAccountId
+                  ? "Connect"
+                  : stripeNeedsOnboarding
+                    ? "Finish setup"
+                    : "Reopen"}
               </Button>
             </div>
+
             <div className="mt-3 text-xs text-slate-600">
-              Current:{" "}
-              <Badge variant={me.plan === "pro" ? "success" : "muted"}>
-                {me.plan === "pro" ? "Pro" : "Free"}
-              </Badge>
+              Status:{" "}
+              {!stripeAccountId ? (
+                <Badge variant="muted">Not connected</Badge>
+              ) : stripeReady ? (
+                <Badge variant="success">Connected</Badge>
+              ) : (
+                <Badge variant="warning">Onboarding required</Badge>
+              )}
             </div>
           </div>
 

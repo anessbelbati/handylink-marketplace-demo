@@ -11,7 +11,6 @@ import { useEffect } from "react";
 import {
   Bell,
   Briefcase,
-  CreditCard,
   Home,
   LayoutDashboard,
   MessageSquare,
@@ -44,12 +43,6 @@ const navItems: NavItem[] = [
     href: "/dashboard/profile",
     label: "Profile",
     icon: UserRound,
-    show: (me) => me?.role === "provider",
-  },
-  {
-    href: "/dashboard/billing",
-    label: "Billing",
-    icon: CreditCard,
     show: (me) => me?.role === "provider",
   },
   {
@@ -126,12 +119,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-3">
             {me ? (
-              <div className="hidden items-center gap-2 sm:flex">
-                <Badge variant="muted">{me.role}</Badge>
-                {me.plan === "pro" ? (
-                  <Badge variant="success">Pro</Badge>
-                ) : null}
-              </div>
+              <Badge variant="muted" className="hidden sm:inline-flex">
+                {me.role}
+              </Badge>
             ) : null}
             {isDemoAuth ? (
               <div className="flex items-center gap-2">

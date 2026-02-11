@@ -80,6 +80,11 @@ export const respondToQuote = mutation({
     const now = Date.now();
 
     if (args.status === "accepted") {
+      // Clients must pay via Stripe Checkout before a quote is accepted.
+      // (Acceptance happens in an internal Stripe webhook mutation.)
+      if (!me.isAdmin) {
+        throw new ConvexError("Use checkout to accept a quote");
+      }
       // Accept this quote, decline others.
       const all = await ctx.db
         .query("quotes")

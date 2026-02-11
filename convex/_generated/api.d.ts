@@ -9,7 +9,6 @@
  */
 
 import type * as admin from "../admin.js";
-import type * as billing from "../billing.js";
 import type * as categories from "../categories.js";
 import type * as conversations from "../conversations.js";
 import type * as dev_seed from "../dev/seed.js";
@@ -23,6 +22,8 @@ import type * as providers from "../providers.js";
 import type * as quotes from "../quotes.js";
 import type * as requests from "../requests.js";
 import type * as reviews from "../reviews.js";
+import type * as stripe from "../stripe.js";
+import type * as stripe_db from "../stripe_db.js";
 import type * as users from "../users.js";
 
 import type {
@@ -33,7 +34,6 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
-  billing: typeof billing;
   categories: typeof categories;
   conversations: typeof conversations;
   "dev/seed": typeof dev_seed;
@@ -47,6 +47,8 @@ declare const fullApi: ApiFromModules<{
   quotes: typeof quotes;
   requests: typeof requests;
   reviews: typeof reviews;
+  stripe: typeof stripe;
+  stripe_db: typeof stripe_db;
   users: typeof users;
 }>;
 

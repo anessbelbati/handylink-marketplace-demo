@@ -88,32 +88,44 @@ npx convex env set ADMIN_CLAIM_SECRET "your-long-random-secret"
 
 Then open `/admin` while signed in and enter that secret once to mark your user as admin.
 
-## Payments (Polar)
+## Payments (Stripe Connect)
 
-Optional provider billing via Polar (useful as a "real payments" add-on for the demo).
+Client-to-provider payments are implemented using **Stripe Connect** (test mode).
 
-Note: Polar is great for subscriptions / credits. It is **not** a marketplace payout solution (client-to-provider payouts usually require Stripe Connect or similar).
+Flow:
 
-1. Create a Polar product for your "Provider Pro" plan (sandbox or production) and copy the Product ID (UUID).
+- Providers connect payouts from `/dashboard/profile` (Stripe Express onboarding).
+- Clients accept a quote by paying via Stripe Checkout ("Pay & accept").
 
-2. Create a Polar access token with the needed scopes (at least `checkouts:write` for starting checkout sessions).
+### Convex Env Vars
 
-3. Set Convex env vars:
+Set these on your Convex deployment:
 
 ```bash
-npx convex env set POLAR_SERVER sandbox
-npx convex env set POLAR_ACCESS_TOKEN "..."
-npx convex env set POLAR_PRO_PRODUCT_ID "..."
-npx convex env set POLAR_WEBHOOK_SECRET "..."
+npx convex env set STRIPE_SECRET_KEY "sk_test_..."
+npx convex env set STRIPE_WEBHOOK_SECRET "whsec_..."   # optional for local testing; required for production
+npx convex env set STRIPE_PLATFORM_FEE_BPS 1000        # optional, default is 1000 (10%)
 ```
 
-4. Configure a Polar webhook to point to your Convex HTTP endpoint:
+### Webhook (Recommended)
+
+Point Stripe webhooks to your Convex HTTP endpoint:
 
 ```txt
-https://<your-convex-deployment>.convex.site/polar/webhook
+https://<your-convex-deployment>.convex.site/stripe/webhook
 ```
 
-5. Open `/dashboard/billing` as a provider and click "Upgrade to Pro".
+Events used:
+
+- `checkout.session.completed`
+- `account.updated`
+
+### Local Testing Without Webhooks
+
+The app also syncs on return from Stripe:
+
+- Provider profile calls a sync after onboarding return (`?stripe=return`)
+- Request detail calls a sync after checkout success (`?payment=success&session_id=...`)
 
 ## Deployment (Vercel + Convex)
 

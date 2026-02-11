@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { Check, MessageSquare, Star, X } from "lucide-react";
 
@@ -19,6 +19,7 @@ import { useDemoAuth } from "@/lib/demo-auth";
 
 export default function RequestDetailClient({ requestId }: { requestId: string }) {
   const router = useRouter();
+  const sp = useSearchParams();
 
   const { demoClerkId } = useDemoAuth();
   const demoArg = demoClerkId ?? undefined;
@@ -34,6 +35,9 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
   const updateStatus = useMutation(api.requests.updateRequestStatus);
   const startConversation = useMutation(api.conversations.startConversation);
   const createReview = useMutation(api.reviews.createReview);
+  const createCheckout = useAction(api.stripe.createCheckoutForQuote);
+  const syncCheckout = useAction(api.stripe.syncCheckoutSession);
+  const cancelCheckout = useMutation(api.stripe_db.cancelCheckoutForRequest);
 
   const urls = useQuery(
     api.files.getUrls,
@@ -45,8 +49,10 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [isActing, setIsActing] = useState(false);
+  const [lastSyncedSessionId, setLastSyncedSessionId] = useState<string | null>(null);
 
   const isClientView = !!(me && data?.request && me._id === data.request.clientId);
+  const paymentStatus = data?.request?.paymentStatus ?? "unpaid";
   const canQuote = useMemo(() => {
     if (!me || !data?.request) return false;
     if (me.role !== "provider" && !me.isAdmin) return false;
@@ -54,6 +60,53 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     if (status === "cancelled" || status === "completed") return false;
     return true;
   }, [data?.request, me]);
+
+  useEffect(() => {
+    if (!isClientView) return;
+    const req = data?.request;
+    if (!req) return;
+
+    const payment = sp.get("payment");
+    const sid = sp.get("session_id");
+
+    if (payment === "cancel") {
+      (async () => {
+        try {
+          await cancelCheckout({ demoClerkId: demoArg, requestId: req._id as any });
+          toast("Payment cancelled");
+        } catch (e: any) {
+          toast.error(e?.message ?? "Failed to cancel checkout");
+        } finally {
+          router.replace(`/dashboard/requests/${req._id}`);
+        }
+      })();
+      return;
+    }
+
+    if (payment === "success" && sid && sid !== lastSyncedSessionId) {
+      setLastSyncedSessionId(sid);
+      (async () => {
+        try {
+          const res = await syncCheckout({ demoClerkId: demoArg, sessionId: sid });
+          if (res.ok) toast.success("Payment confirmed");
+          else toast("Payment pending. Refresh in a moment.");
+        } catch (e: any) {
+          toast.error(e?.message ?? "Failed to sync payment");
+        } finally {
+          router.replace(`/dashboard/requests/${req._id}`);
+        }
+      })();
+    }
+  }, [
+    cancelCheckout,
+    data?.request,
+    demoArg,
+    isClientView,
+    lastSyncedSessionId,
+    router,
+    sp,
+    syncCheckout,
+  ]);
 
   async function onRespondQuote(quoteId: string, status: "accepted" | "declined") {
     setIsActing(true);
@@ -67,6 +120,23 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
     } finally {
+      setIsActing(false);
+    }
+  }
+
+  async function onPayAndAccept(quoteId: string) {
+    if (!data?.request) return;
+    setIsActing(true);
+    try {
+      const { url } = await createCheckout({
+        demoClerkId: demoArg,
+        origin: window.location.origin,
+        requestId: data.request._id as any,
+        quoteId: quoteId as any,
+      });
+      window.location.href = url;
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to start checkout");
       setIsActing(false);
     }
   }
@@ -202,6 +272,11 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
             >
               {request.status.replaceAll("_", " ")}
             </Badge>
+            {paymentStatus === "paid" ? (
+              <Badge variant="success">paid</Badge>
+            ) : paymentStatus === "processing" ? (
+              <Badge variant="warning">payment pending</Badge>
+            ) : null}
           </div>
           <div className="mt-2 text-sm text-slate-700">
             {request.city} | {request.categorySlug} | {request.urgency} |{" "}
@@ -465,11 +540,15 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            onClick={() => onRespondQuote(q.quote._id, "accepted")}
-                            disabled={isActing}
+                            onClick={() => onPayAndAccept(q.quote._id)}
+                            disabled={
+                              isActing ||
+                              paymentStatus === "processing" ||
+                              !q.provider?.stripeConnectAccountId
+                            }
                           >
                             <Check className="h-4 w-4" />
-                            Accept
+                            Pay & accept
                           </Button>
                           <Button
                             size="sm"
@@ -483,6 +562,12 @@ export default function RequestDetailClient({ requestId }: { requestId: string }
                         </div>
                       ) : null}
                     </div>
+                    {q.quote.status === "pending" && !q.provider?.stripeConnectAccountId ? (
+                      <div className="mt-3 text-xs text-amber-700">
+                        Provider hasn&apos;t connected payouts yet. You can message them, but you
+                        can&apos;t pay until they connect Stripe.
+                      </div>
+                    ) : null}
                   </div>
                 ))}
 

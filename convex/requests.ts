@@ -38,6 +38,7 @@ export const createRequest = mutation({
       city: args.city,
       urgency: args.urgency,
       status: "open",
+      paymentStatus: "unpaid",
       budgetMin: args.budgetMin,
       budgetMax: args.budgetMax,
       createdAt: now,

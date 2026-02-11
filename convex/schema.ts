@@ -10,15 +10,18 @@ export default defineSchema({
     role: v.union(v.literal("client"), v.literal("provider"), v.literal("admin")),
     isSuspended: v.boolean(),
     isAdmin: v.boolean(),
-    // Optional billing state (kept on the user for easy UI display / filtering).
-    plan: v.optional(v.union(v.literal("free"), v.literal("pro"))),
-    planUpdatedAt: v.optional(v.number()),
-    polarCustomerId: v.optional(v.string()),
+    // Stripe Connect (providers)
+    stripeConnectAccountId: v.optional(v.string()),
+    stripeChargesEnabled: v.optional(v.boolean()),
+    stripePayoutsEnabled: v.optional(v.boolean()),
+    stripeDetailsSubmitted: v.optional(v.boolean()),
+    stripeOnboardedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_role", ["role"])
     .index("by_email", ["email"])
+    .index("by_stripeConnectAccountId", ["stripeConnectAccountId"])
     .searchIndex("search_fullName", {
       searchField: "fullName",
       filterFields: ["role", "isSuspended"],
@@ -85,6 +88,16 @@ export default defineSchema({
       v.literal("completed"),
       v.literal("cancelled"),
     ),
+    // Stripe payment state (client -> provider)
+    paymentStatus: v.optional(
+      v.union(v.literal("unpaid"), v.literal("processing"), v.literal("paid")),
+    ),
+    paymentQuoteId: v.optional(v.id("quotes")),
+    stripeCheckoutSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()),
+    paidAt: v.optional(v.number()),
+    platformFeeCents: v.optional(v.number()),
+    providerPayoutCents: v.optional(v.number()),
     budgetMin: v.optional(v.number()),
     budgetMax: v.optional(v.number()),
     acceptedQuoteId: v.optional(v.id("quotes")),
